@@ -1,8 +1,8 @@
 const { MercadoPagoConfig } = require('mercadopago');
-require('dotenv').config(); 
+require('dotenv').config();
 
-// autenticação com a API de pagamentos
-const client = new MercadoPagoConfig({ 
-    accessToken: process.env.MP_ACCESS_TOKEN});
+
+const client = new MercadoPagoConfig({
+  accessToken: process.env.MP_ACCESS_TOKEN });
 
 module.exports = client;
