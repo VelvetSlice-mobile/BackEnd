@@ -2,11 +2,12 @@
   "name": "backend_velvetslice",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "src/server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node src/index.js",
-    "dev": "nodemon src/index.js"
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js",
+    "db:clean": "node scripts/db-clean.js"
   },
   "keywords": [],
   "author": "",
@@ -15,9 +16,19 @@
   "dependencies": {
     "cors": "^2.8.6",
     "dotenv": "^17.3.1",
-    "express": "^5.2.1"
+    "express": "^5.2.1",
+    "mercadopago": "^2.12.0",
+    "sqlite3": "^6.0.1"
   },
   "devDependencies": {
     "nodemon": "^3.1.14"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/VelvetSlice-mobile/BackEnd.git"
+  },
+  "bugs": {
+    "url": "https://github.com/VelvetSlice-mobile/BackEnd/issues"
+  },
+  "homepage": "https://github.com/VelvetSlice-mobile/BackEnd#readme"
 }
