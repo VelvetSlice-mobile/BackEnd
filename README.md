@@ -39,11 +39,15 @@ Ambiente de desenvolvimento:
 npm run dev
 ```
 
+Use esse comando no dia a dia de desenvolvimento, porque ele executa o servidor com `nodemon` e reinicia automaticamente quando algum arquivo do BackEnd for alterado.
+
 Ambiente normal:
 
 ```bash
 npm start
 ```
+
+Use `npm start` quando quiser apenas subir o servidor sem recarregamento automatico.
 
 Teste rapido da API:
 
@@ -79,7 +83,7 @@ E mantem:
 
 ### Porta 3000 ocupada
 
-- Finalize o processo que esta usando a porta e rode `npm start` novamente.
+- Finalize o processo que esta usando a porta e rode `npm run dev` novamente durante o desenvolvimento.
 
 ### Erro de token Mercado Pago
 
