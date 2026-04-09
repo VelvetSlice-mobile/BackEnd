@@ -1,13 +1,13 @@
 const db = require("../config/db");
 
-// Registro de Cliente
+
 exports.registerClient = (req, res) => {
   const { nome, email, senha, telefone } = req.body;
   const sql = `INSERT INTO cliente (nome, email, senha, telefone) VALUES (?, ?, ?, ?)`;
-  
+
   db.run(sql, [nome, email, senha, telefone], function (err) {
     if (err) {
-  
+
       return res.status(400).json({ error: "Email já cadastrado ou erro no banco." });
     }
 
@@ -15,38 +15,38 @@ exports.registerClient = (req, res) => {
   });
 };
 
-// Listar todos os clientes
+
 exports.getAllClients = (req, res) => {
-  
+
   db.all("SELECT id_cliente, nome, email, telefone FROM cliente", [], (err, rows) => {
     if (err) return res.status(500).json({ error: err.message });
     res.json(rows);
   });
 };
 
-// Atualizar perfil do cliente
+
 exports.updateClient = (req, res) => {
   const { nome, email, telefone } = req.body;
 
   const sql = `UPDATE cliente SET nome = ?, email = ?, telefone = ? WHERE id_cliente = ?`;
-  
-  db.run(sql, [nome, email, telefone, req.params.id], function(err) {
+
+  db.run(sql, [nome, email, telefone, req.params.id], function (err) {
     if (err) return res.status(500).json({ error: err.message });
     res.json({ updated: this.changes });
   });
 };
 
-// Delete: Remover conta
+
 exports.deleteClient = (req, res) => {
   const id = req.params.id;
 
-  db.run("DELETE FROM cliente WHERE id_cliente = ?", id, function(err) {
+  db.run("DELETE FROM cliente WHERE id_cliente = ?", id, function (err) {
     if (err) {
-      return res.status(500).json({ 
-        error: "Não foi possível deletar a conta. Verifique se existem pedidos vinculados a este usuário." 
+      return res.status(500).json({
+        error: "Não foi possível deletar a conta. Verifique se existem pedidos vinculados a este usuário."
       });
     }
-    
+
     if (this.changes === 0) {
       return res.status(404).json({ message: "Cliente não encontrado." });
     }

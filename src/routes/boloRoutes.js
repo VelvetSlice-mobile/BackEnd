@@ -4,6 +4,7 @@ const boloController = require("../controllers/boloController");
 
 router.get("/", boloController.getAllBolos);
 router.post("/", boloController.createBolo);
+router.post("/sync", boloController.syncProducts);
 router.put("/:id", boloController.updateBolo);
 router.delete("/:id", boloController.deleteBolo);
 
