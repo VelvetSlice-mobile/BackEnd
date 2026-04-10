@@ -37,6 +37,17 @@ exports.updateClient = (req, res) => {
 };
 
 
+exports.loginClient = (req, res) => {
+  const { email, senha } = req.body;
+  const sql = `SELECT id_cliente, nome, email, telefone FROM cliente WHERE email = ? AND senha = ?`;
+
+  db.get(sql, [email, senha], (err, row) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (!row) return res.status(401).json({ error: "Email ou senha incorretos." });
+    res.json(row);
+  });
+};
+
 exports.deleteClient = (req, res) => {
   const id = req.params.id;
 
