@@ -3,6 +3,28 @@ const db = new sqlite3.Database("./velvetslice_server.db");
 
 db.run("PRAGMA foreign_keys = ON");
 
+function ensureClienteAvatarColumn(done) {
+  db.all("PRAGMA table_info(cliente)", (err, columns) => {
+    if (err) {
+      console.error("Erro ao verificar colunas da tabela cliente:", err.message);
+      return done();
+    }
+
+    const hasAvatarColumn = columns.some((column) => column.name === "avatar_url");
+
+    if (hasAvatarColumn) {
+      return done();
+    }
+
+    db.run("ALTER TABLE cliente ADD COLUMN avatar_url TEXT", (alterErr) => {
+      if (alterErr) {
+        console.error("Erro ao adicionar coluna avatar_url:", alterErr.message);
+      }
+      done();
+    });
+  });
+}
+
 db.serialize(() => {
 
   db.run(`CREATE TABLE IF NOT EXISTS cliente (
@@ -65,8 +87,10 @@ db.serialize(() => {
     FOREIGN KEY(fk_Bolo_id_bolo) REFERENCES bolo(id_bolo)
   )`);
 
-  const { syncProducts } = require('./syncData');
-  syncProducts(db);
+  ensureClienteAvatarColumn(() => {
+    const { syncProducts } = require('./syncData');
+    syncProducts(db);
+  });
 });
 
 module.exports = db;
