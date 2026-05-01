@@ -1,0 +1,3 @@
+node_modules/
+velvetslice_server.db
+.env
