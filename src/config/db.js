@@ -3,22 +3,24 @@ const db = new sqlite3.Database("./velvetslice_server.db");
 
 db.run("PRAGMA foreign_keys = ON");
 
-function ensureClienteAvatarColumn(done) {
-  db.all("PRAGMA table_info(cliente)", (err, columns) => {
+function ensureColumnExists(tableName, columnName, columnType, done) {
+  db.all(`PRAGMA table_info(${tableName})`, (err, columns) => {
     if (err) {
-      console.error("Erro ao verificar colunas da tabela cliente:", err.message);
+      console.error(`Erro ao verificar colunas da tabela ${tableName}:`, err.message);
       return done();
     }
 
-    const hasAvatarColumn = columns.some((column) => column.name === "avatar_url");
+    const hasColumn = columns.some((column) => column.name === columnName);
 
-    if (hasAvatarColumn) {
+    if (hasColumn) {
       return done();
     }
 
-    db.run("ALTER TABLE cliente ADD COLUMN avatar_url TEXT", (alterErr) => {
+    db.run(`ALTER TABLE ${tableName} ADD COLUMN ${columnName} ${columnType}`, (alterErr) => {
       if (alterErr) {
-        console.error("Erro ao adicionar coluna avatar_url:", alterErr.message);
+        console.error(`Erro ao adicionar coluna ${columnName} em ${tableName}:`, alterErr.message);
+      } else {
+        console.log(`Coluna ${columnName} adicionada com sucesso na tabela ${tableName}.`);
       }
       done();
     });
@@ -35,17 +37,17 @@ db.serialize(() => {
     telefone VARCHAR(20)
   )`);
 
-
   db.run(`CREATE TABLE IF NOT EXISTS endereco (
     id_endereco INTEGER PRIMARY KEY AUTOINCREMENT,
     nome_endereco VARCHAR(50),
     logradouro VARCHAR(255),
     numero VARCHAR(20),
+    bairro VARCHAR(100),
+    cidade VARCHAR(100),
     CEP VARCHAR(10),
     estado CHAR(2),
     complemento VARCHAR(100)
   )`);
-
 
   db.run(`CREATE TABLE IF NOT EXISTS endereco_entrega (
     fk_Cliente_id_cliente INTEGER NOT NULL,
@@ -55,7 +57,6 @@ db.serialize(() => {
     FOREIGN KEY(fk_Endereco_id_endereco) REFERENCES endereco(id_endereco) ON DELETE CASCADE
   )`);
 
-
   db.run(`CREATE TABLE IF NOT EXISTS bolo (
     id_bolo INTEGER PRIMARY KEY AUTOINCREMENT,
     nome VARCHAR(100),
@@ -63,7 +64,6 @@ db.serialize(() => {
     preco DECIMAL(10,2),
     imagem VARCHAR(255)
   )`);
-
 
   db.run(`CREATE TABLE IF NOT EXISTS pedido (
     id_pedido INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -74,7 +74,6 @@ db.serialize(() => {
     fk_Cliente_id_cliente INTEGER NOT NULL,
     FOREIGN KEY(fk_Cliente_id_cliente) REFERENCES cliente(id_cliente)
   )`);
-
 
   db.run(`CREATE TABLE IF NOT EXISTS item_pedido (
     id_item_pedido INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -87,10 +86,15 @@ db.serialize(() => {
     FOREIGN KEY(fk_Bolo_id_bolo) REFERENCES bolo(id_bolo)
   )`);
 
-  ensureClienteAvatarColumn(() => {
-    const { syncProducts } = require('./syncData');
-    syncProducts(db);
+  ensureColumnExists("cliente", "avatar_url", "TEXT", () => {
+    ensureColumnExists("endereco", "bairro", "VARCHAR(100)", () => {
+      ensureColumnExists("endereco", "cidade", "VARCHAR(100)", () => {
+        const { syncProducts } = require('./syncData');
+        syncProducts(db);
+      });
+    });
   });
+
 });
 
 module.exports = db;
