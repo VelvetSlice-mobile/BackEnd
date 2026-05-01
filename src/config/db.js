@@ -86,11 +86,9 @@ db.serialize(() => {
     FOREIGN KEY(fk_Bolo_id_bolo) REFERENCES bolo(id_bolo)
   )`);
 
-
   ensureColumnExists("cliente", "avatar_url", "TEXT", () => {
     ensureColumnExists("endereco", "bairro", "VARCHAR(100)", () => {
       ensureColumnExists("endereco", "cidade", "VARCHAR(100)", () => {
-
         const { syncProducts } = require('./syncData');
         syncProducts(db);
       });
