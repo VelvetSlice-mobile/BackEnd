@@ -1,6 +1,74 @@
 const fs = require("fs");
 const path = require("node:path");
+const path = require("path");
 const db = require("../config/db");
+const { signClientToken } = require("../config/auth");
+
+const PUBLIC_UPLOAD_PREFIX = "/uploads/avatars";
+
+function buildPublicAvatarUrl(req, avatarPath) {
+  if (!avatarPath) {
+    return null;
+  }
+
+  if (/^https?:\/\//i.test(avatarPath)) {
+    return avatarPath;
+  }
+
+  const normalizedPath = avatarPath.startsWith("/") ? avatarPath : `/${avatarPath}`;
+  return `${req.protocol}://${req.get("host")}${normalizedPath}`;
+}
+
+function buildClientPayload(req, row) {
+  return {
+    id_cliente: row.id_cliente,
+    id: row.id_cliente,
+    nome: row.nome,
+    email: row.email,
+    telefone: row.telefone,
+    avatar_url: buildPublicAvatarUrl(req, row.avatar_url),
+  };
+}
+
+function buildLegacyClientPayload(req, row, includeToken = false) {
+  const payload = buildClientPayload(req, row);
+  const legacy = {
+    id_cliente: payload.id_cliente,
+    nome: payload.nome,
+    email: payload.email,
+    telefone: payload.telefone,
+    avatar_url: payload.avatar_url,
+  };
+
+  if (includeToken) {
+    legacy.access_token = signClientToken({ sub: String(row.id_cliente) });
+    legacy.token_type = "Bearer";
+  }
+
+  return legacy;
+}
+
+function getAvatarDiskPath(storedAvatarUrl) {
+  if (!storedAvatarUrl) {
+    return null;
+  }
+
+  let pathname = storedAvatarUrl;
+
+  if (/^https?:\/\//i.test(storedAvatarUrl)) {
+    try {
+      pathname = new URL(storedAvatarUrl).pathname;
+    } catch (error) {
+      return null;
+    }
+  }
+
+  if (!pathname.startsWith(PUBLIC_UPLOAD_PREFIX)) {
+    return null;
+  }
+
+  return path.resolve(__dirname, `../../${pathname.replace(/^\//, "")}`);
+}
 
 const PUBLIC_UPLOAD_PREFIX = "/uploads/avatars";
 
@@ -76,11 +144,20 @@ exports.registerClient = (req, res) => {
 
   db.run(sql, [nome, email, senha, telefone], function (err) {
     if (err) {
-
       return res.status(400).json({ error: "Email já cadastrado ou erro no banco." });
     }
 
-    res.status(201).json({ id_cliente: this.lastID, nome });
+    const row = {
+      id_cliente: this.lastID,
+      nome,
+      email,
+      telefone,
+      avatar_url: null,
+    };
+
+    res.status(201).json({
+      ...buildLegacyClientPayload(req, row, true),
+    });
   });
 };
 
@@ -231,17 +308,30 @@ exports.updateAvatar = (req, res) => {
 exports.deleteClient = (req, res) => {
   const id = req.params.id;
 
-  db.run("DELETE FROM cliente WHERE id_cliente = ?", id, function (err) {
-    if (err) {
-      return res.status(500).json({
-        error: "Não foi possível deletar a conta. Verifique se existem pedidos vinculados a este usuário."
+  db.get(
+    "SELECT avatar_url FROM cliente WHERE id_cliente = ?",
+    [id],
+    (lookupErr, clientRow) => {
+      if (lookupErr) {
+        return res.status(500).json({ error: lookupErr.message });
+      }
+
+      db.run("DELETE FROM cliente WHERE id_cliente = ?", id, function (err) {
+        if (err) {
+          return res.status(500).json({
+            error:
+              "Não foi possível deletar a conta. Verifique se existem pedidos vinculados a este usuário.",
+          });
+        }
+
+        if (this.changes === 0) {
+          return res.status(404).json({ message: "Cliente não encontrado." });
+        }
+
+        removeFileIfExists(getAvatarDiskPath(clientRow?.avatar_url));
+
+        res.json({ message: "Conta removida com sucesso!", deleted: this.changes });
       });
-    }
-
-    if (this.changes === 0) {
-      return res.status(404).json({ message: "Cliente não encontrado." });
-    }
-
-    res.json({ message: "Conta removida com sucesso!", deleted: this.changes });
-  });
+    },
+  );
 };

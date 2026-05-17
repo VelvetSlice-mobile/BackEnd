@@ -3,7 +3,6 @@ const express = require("express");
 const dotenv = require("dotenv");
 const path = require("node:path");
 
-
 const boloRoutes = require("./routes/boloRoutes");
 const clientRoutes = require("./routes/clientRoutes");
 const addressRoutes = require("./routes/addressRoutes");
