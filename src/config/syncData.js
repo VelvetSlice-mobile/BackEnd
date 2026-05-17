@@ -69,7 +69,7 @@ const products = [
 function syncProducts(db) {
   products.forEach((product) => {
     db.run(
-      `INSERT OR REPLACE INTO bolo (id_bolo, nome, descricao, preco, imagem) VALUES (?, ?, ?, ?, ?)`,
+      `INSERT OR IGNORE INTO bolo (id_bolo, nome, descricao, preco, imagem) VALUES (?, ?, ?, ?, ?)`,
       [product.id, product.name, product.description, product.price, ''],
       () => {}
     );

@@ -1,7 +1,6 @@
 const client = require('../config/mercadopago');
-const { Preference } = require('mercadopago');
+const { Preference, Payment } = require('mercadopago');
 const db = require('../config/db');
-
 
 exports.createPayment = async (req, res) => {
   try {
@@ -18,26 +17,23 @@ exports.createPayment = async (req, res) => {
           title: item.nome,
           quantity: Number(item.quantidade),
           unit_price: Number(item.preco_unitario),
-          currency_id: 'BRL'
+          currency_id: 'BRL',
         })),
-
         back_urls: req.body.back_urls || {
           success: "myapp://payment-success",
           failure: "myapp://payment-failure",
-          pending: "myapp://payment-pending"
+          pending: "myapp://payment-pending",
         },
         auto_return: "approved",
-
-        external_reference: id_pedido ? id_pedido.toString() : "0"
-      }
+        external_reference: id_pedido ? id_pedido.toString() : "0",
+      },
     });
 
     res.json({
       id: result.id,
       init_point: result.init_point,
-      sandbox_init_point: result.sandbox_init_point
+      sandbox_init_point: result.sandbox_init_point,
     });
-
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -46,25 +42,27 @@ exports.createPayment = async (req, res) => {
 exports.receiveWebhook = async (req, res) => {
   try {
     const { query, body } = req;
-
-    const paymentId = query.id || body.data && body.data.id;
+    const paymentId = query.id || body.data?.id;
     const type = query.type || body.type;
 
-
     if (type === 'payment' && paymentId) {
+      const paymentApi = new Payment(client);
+      const payment = await paymentApi.get({ id: paymentId });
 
-      const id_pedido = body.external_reference || query.external_reference;
+      const id_pedido = payment.external_reference;
+      const status = payment.status;
 
-      if (id_pedido) {
-        const sql = `UPDATE pedido SET status_pedido = 'Pago' WHERE id_pedido = ?`;
-
-        db.run(sql, [id_pedido]);
+      if (id_pedido && status === 'approved') {
+        db.run(
+          "UPDATE pedido SET status_pedido = 'Pago' WHERE id_pedido = ?",
+          [id_pedido]
+        );
       }
     }
 
     res.status(200).send("OK");
-
   } catch (error) {
-    res.status(200).send("Erro Processado");
+    console.error("Webhook error:", error.message);
+    res.status(200).send("OK");
   }
 };
