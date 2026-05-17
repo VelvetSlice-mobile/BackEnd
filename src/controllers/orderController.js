@@ -7,16 +7,16 @@ exports.createOrder = (req, res) => {
     metodo_pagamento,
     fk_Cliente_id_cliente,
     fk_cliente_id_cliente,
+    fk_Endereco_id_endereco,
     itens,
   } = req.body;
   const fkCliente = fk_Cliente_id_cliente ?? fk_cliente_id_cliente;
   const data_pedido = new Date().toISOString();
 
+  const sqlPedido = `INSERT INTO pedido (data_pedido, valor_total, status_pedido, metodo_pagamento, fk_Cliente_id_cliente, fk_Endereco_id_endereco)
+                     VALUES (?, ?, ?, ?, ?, ?)`;
 
-  const sqlPedido = `INSERT INTO pedido (data_pedido, valor_total, status_pedido, metodo_pagamento, fk_Cliente_id_cliente)
-                     VALUES (?, ?, ?, ?, ?)`;
-
-  db.run(sqlPedido, [data_pedido, valor_total, "Pendente", metodo_pagamento, fkCliente], function (err) {
+  db.run(sqlPedido, [data_pedido, valor_total, "Pendente", metodo_pagamento, fkCliente, fk_Endereco_id_endereco ?? null], function (err) {
     if (err) {
       return res.status(500).json({ error: err.message });
     }
