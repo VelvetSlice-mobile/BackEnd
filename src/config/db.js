@@ -66,10 +66,6 @@ db.serialize(() => {
     FOREIGN KEY(fk_Bolo_id_bolo) REFERENCES bolo(id_bolo)
   )`);
 
-<<<<<<< Updated upstream
-  const { syncProducts } = require('./syncData');
-  syncProducts(db);
-=======
   db.run(`CREATE TABLE IF NOT EXISTS avaliacao (
     id_avaliacao INTEGER PRIMARY KEY AUTOINCREMENT,
     nota INTEGER NOT NULL CHECK(nota BETWEEN 1 AND 5),
@@ -93,7 +89,6 @@ db.serialize(() => {
     syncProducts(db);
   });
 
->>>>>>> Stashed changes
 });
 
 module.exports = db;
