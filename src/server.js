@@ -8,7 +8,7 @@ const clientRoutes = require("./routes/clientRoutes");
 const addressRoutes = require("./routes/addressRoutes");
 const orderRoutes = require("./routes/orderRoutes");
 const paymentRoutes = require("./routes/paymentRoutes");
-const dashboardRoutes = require("./routes/dashboardRoutes");
+//const dashboardRoutes = require("./routes/dashboardRoutes");
 
 dotenv.config();
 const app = express();
@@ -23,7 +23,7 @@ app.use("/api/clients", clientRoutes);
 app.use("/api/addresses", addressRoutes);
 app.use("/api/orders", orderRoutes);
 app.use("/api/payments", paymentRoutes);
-app.use("/api/dashboard", dashboardRoutes);
+//app.use("/api/dashboard", dashboardRoutes);
 
 app.get("/", (req, res) => {
   res.send("Servidor Velvet Slice Online! 🎂");
