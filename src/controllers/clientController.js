@@ -1,12 +1,7 @@
-<<<<<<< Updated upstream
-=======
 const fs = require("fs");
 const path = require("node:path");
->>>>>>> Stashed changes
 const db = require("../config/db");
 
-<<<<<<< Updated upstream
-=======
 const PUBLIC_UPLOAD_PREFIX = "/uploads/avatars";
 
 function buildPublicAvatarUrl(req, avatarPath) {
@@ -74,7 +69,6 @@ function removeFileIfExists(filePath) {
     }
   });
 }
->>>>>>> Stashed changes
 
 exports.registerClient = (req, res) => {
   const { nome, email, senha, telefone } = req.body;
@@ -90,17 +84,6 @@ exports.registerClient = (req, res) => {
   });
 };
 
-<<<<<<< Updated upstream
-
-exports.getAllClients = (req, res) => {
-
-  db.all("SELECT id_cliente, nome, email, telefone FROM cliente", [], (err, rows) => {
-    if (err) return res.status(500).json({ error: err.message });
-    res.json(rows);
-  });
-};
-
-=======
 exports.loginClient = (req, res) => {
   const { email, senha } = req.body;
 
@@ -147,7 +130,6 @@ exports.getClientById = (req, res) => {
     },
   );
 };
->>>>>>> Stashed changes
 
 exports.updateClient = (req, res) => {
   const { nome, email, telefone } = req.body;
@@ -160,8 +142,6 @@ exports.updateClient = (req, res) => {
   });
 };
 
-<<<<<<< Updated upstream
-=======
 exports.updatePassword = (req, res) => {
   const { senhaAtual, novaSenha } = req.body;
   const { id } = req.params;
@@ -247,7 +227,6 @@ exports.updateAvatar = (req, res) => {
     },
   );
 };
->>>>>>> Stashed changes
 
 exports.deleteClient = (req, res) => {
   const id = req.params.id;

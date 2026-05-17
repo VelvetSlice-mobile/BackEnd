@@ -3,32 +3,6 @@ const db = new sqlite3.Database("./velvetslice_server.db");
 
 db.run("PRAGMA foreign_keys = ON");
 
-<<<<<<< Updated upstream
-=======
-function ensureColumnExists(tableName, columnName, columnType, done) {
-  db.all(`PRAGMA table_info(${tableName})`, (err, columns) => {
-    if (err) {
-      console.error(`Erro ao verificar colunas da tabela ${tableName}:`, err.message);
-      return done();
-    }
-    if (columns.some((col) => col.name === columnName)) return done();
-    db.run(`ALTER TABLE ${tableName} ADD COLUMN ${columnName} ${columnType}`, (alterErr) => {
-      if (alterErr) console.error(`Erro ao adicionar coluna ${columnName} em ${tableName}:`, alterErr.message);
-      done();
-    });
-  });
-}
-
-function ensureColumns(checks, finalCallback) {
-  const run = (index) => {
-    if (index >= checks.length) return finalCallback();
-    const { table, column, type } = checks[index];
-    ensureColumnExists(table, column, type, () => run(index + 1));
-  };
-  run(0);
-}
-
->>>>>>> Stashed changes
 db.serialize(() => {
 
   db.run(`CREATE TABLE IF NOT EXISTS cliente (
@@ -40,20 +14,6 @@ db.serialize(() => {
     role VARCHAR(20) DEFAULT 'cliente'
   )`);
 
-<<<<<<< Updated upstream
-=======
-  db.run(`CREATE TABLE IF NOT EXISTS cupom (
-    id_cupom INTEGER PRIMARY KEY AUTOINCREMENT,
-    codigo VARCHAR(50) UNIQUE,
-    desconto_tipo VARCHAR(10) DEFAULT 'flat',
-    desconto_valor DECIMAL(10,2),
-    ativo INTEGER DEFAULT 1
-  )`);
-
-  db.run(`INSERT OR IGNORE INTO cupom (codigo, desconto_tipo, desconto_valor) VALUES ('VELVET10', 'flat', 10.00)`);
-  db.run(`INSERT OR IGNORE INTO cupom (codigo, desconto_tipo, desconto_valor) VALUES ('DESCONTO20', 'flat', 20.00)`);
-  db.run(`INSERT OR IGNORE INTO cupom (codigo, desconto_tipo, desconto_valor) VALUES ('PRIMEIRA', 'flat', 15.00)`);
->>>>>>> Stashed changes
 
   db.run(`CREATE TABLE IF NOT EXISTS endereco (
     id_endereco INTEGER PRIMARY KEY AUTOINCREMENT,
