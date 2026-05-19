@@ -2,6 +2,7 @@ const express = require('express');
 const multer = require('multer');
 const router = express.Router();
 const dc = require('../controllers/dashboardController');
+const requireAdminAuth = require('../middleware/requireAdminAuth');
 const { uploadProductImage } = require('../config/productImageUpload');
 
 function handleProductImageUpload(req, res, next) {
@@ -14,21 +15,24 @@ function handleProductImageUpload(req, res, next) {
   });
 }
 
-router.get('/stats', dc.getStats);
-router.get('/mais-vendidos', dc.getMaisVendidos);
+router.post('/register-admin', dc.registerAdmin);
 
-router.get('/pedidos', dc.getAllPedidos);
-router.get('/pedidos/:id', dc.getPedidoDetalhado);
-router.put('/pedidos/:id/status', dc.updatePedidoStatus);
+router.get('/stats', requireAdminAuth, dc.getStats);
+router.get('/mais-vendidos', requireAdminAuth, dc.getMaisVendidos);
 
-router.get('/bolos', dc.getAllBolos);
-router.post('/bolos', dc.createBolo);
-router.put('/bolos/:id', dc.updateBolo);
-router.post('/bolos/:id/image', handleProductImageUpload, dc.uploadBoloImage);
-router.delete('/bolos/:id', dc.deleteBolo);
+router.get('/pedidos', requireAdminAuth, dc.getAllPedidos);
+router.get('/pedidos/:id', requireAdminAuth, dc.getPedidoDetalhado);
+router.put('/pedidos/:id/status', requireAdminAuth, dc.updatePedidoStatus);
 
-router.get('/cupons', dc.getAllCupons);
-router.post('/cupons', dc.createCupom);
-router.patch('/cupons/:id/toggle', dc.toggleCupom);
+router.get('/bolos', requireAdminAuth, dc.getAllBolos);
+router.post('/bolos', requireAdminAuth, dc.createBolo);
+router.put('/bolos/:id', requireAdminAuth, dc.updateBolo);
+router.patch('/bolos/:id/toggle', requireAdminAuth, dc.toggleBoloAtivo);
+router.post('/bolos/:id/image', requireAdminAuth, handleProductImageUpload, dc.uploadBoloImage);
+router.delete('/bolos/:id', requireAdminAuth, dc.deleteBolo);
+
+router.get('/cupons', requireAdminAuth, dc.getAllCupons);
+router.post('/cupons', requireAdminAuth, dc.createCupom);
+router.patch('/cupons/:id/toggle', requireAdminAuth, dc.toggleCupom);
 
 module.exports = router;

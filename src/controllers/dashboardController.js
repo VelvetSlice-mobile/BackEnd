@@ -3,6 +3,24 @@ const path = require("node:path");
 const db = require('../config/db');
 const { PRODUCT_IMAGE_DIR } = require('../config/productImageUpload');
 
+exports.registerAdmin = (req, res) => {
+  const { nome, email, senha, telefone, codigo } = req.body;
+  if (!nome || !email || !senha || !codigo) {
+    return res.status(400).json({ error: 'Todos os campos são obrigatórios.' });
+  }
+  if (codigo.trim() !== (process.env.ADMIN_REGISTER_CODE || '').trim()) {
+    return res.status(403).json({ error: 'Código de acesso inválido.' });
+  }
+  db.run(
+    'INSERT INTO cliente (nome, email, senha, telefone, role) VALUES (?, ?, ?, ?, ?)',
+    [nome.trim(), email.trim().toLowerCase(), senha, telefone?.trim() || null, 'admin'],
+    function (err) {
+      if (err) return res.status(400).json({ error: 'E-mail já cadastrado.' });
+      res.status(201).json({ id_cliente: this.lastID, nome });
+    }
+  );
+};
+
 exports.getStats = (req, res) => {
   db.get('SELECT COUNT(*) as total FROM bolo', (err, produtos) => {
     if (err) return res.status(500).json({ error: err.message });
@@ -41,7 +59,8 @@ exports.getAllPedidos = (req, res) => {
   let sql = `
     SELECT p.*, c.nome as nome_cliente, c.telefone,
            p.id_pedido, p.data_pedido, p.valor_total, p.status_pedido,
-           p.metodo_pagamento
+           p.metodo_pagamento,
+           (SELECT COUNT(*) FROM item_pedido WHERE fk_Pedido_id_pedido = p.id_pedido) as total_itens
     FROM pedido p
     JOIN cliente c ON c.id_cliente = p.fk_Cliente_id_cliente
   `;
@@ -153,6 +172,19 @@ exports.uploadBoloImage = (req, res) => {
       }
 
       res.json({ imagem: imageUrl });
+    });
+  });
+};
+
+exports.toggleBoloAtivo = (req, res) => {
+  const { id } = req.params;
+  db.get('SELECT ativo FROM bolo WHERE id_bolo = ?', [id], (err, row) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (!row) return res.status(404).json({ error: 'Bolo não encontrado.' });
+    const novoAtivo = row.ativo === 0 ? 1 : 0;
+    db.run('UPDATE bolo SET ativo = ? WHERE id_bolo = ?', [novoAtivo, id], function (err2) {
+      if (err2) return res.status(500).json({ error: err2.message });
+      res.json({ updated: this.changes, ativo: novoAtivo });
     });
   });
 };
