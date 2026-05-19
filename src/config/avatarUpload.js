@@ -1,6 +1,6 @@
-const fs = require("fs");
-const path = require("path");
-const crypto = require("crypto");
+const fs = require("node:fs");
+const path = require("node:path");
+const crypto = require("node:crypto");
 const multer = require("multer");
 
 const AVATAR_DIR = path.resolve(__dirname, "../../uploads/avatars");
@@ -58,8 +58,19 @@ const uploadAvatar = multer({
   },
 });
 
+function handleAvatarUpload(req, res, next) {
+  uploadAvatar.single("file")(req, res, (err) => {
+    if (!err) return next();
+    if (err instanceof multer.MulterError && err.code === "LIMIT_FILE_SIZE") {
+      return res.status(400).json({ error: "Imagem muito grande. Limite de 3MB." });
+    }
+    return res.status(400).json({ error: err.message || "Falha no upload da imagem." });
+  });
+}
+
 module.exports = {
   uploadAvatar,
+  handleAvatarUpload,
   AVATAR_DIR,
   MAX_AVATAR_BYTES,
   ALLOWED_MIME_TYPES,

@@ -1,6 +1,6 @@
-const fs = require("fs");
-const path = require("path");
-const crypto = require("crypto");
+const fs = require("node:fs");
+const path = require("node:path");
+const crypto = require("node:crypto");
 const multer = require("multer");
 
 const PRODUCT_IMAGE_DIR = path.resolve(__dirname, "../../uploads/products");
@@ -13,7 +13,8 @@ const storage = multer.diskStorage({
     cb(null, PRODUCT_IMAGE_DIR);
   },
   filename: (req, file, cb) => {
-    const ext = file.mimetype === "image/png" ? ".png" : file.mimetype === "image/webp" ? ".webp" : ".jpg";
+    const EXT_MAP = { "image/png": ".png", "image/webp": ".webp" };
+    const ext = EXT_MAP[file.mimetype] ?? ".jpg";
     cb(null, `product-${Date.now()}-${crypto.randomUUID()}${ext}`);
   },
 });
