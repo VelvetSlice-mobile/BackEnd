@@ -3,8 +3,6 @@ const db = new sqlite3.Database("./velvetslice_server.db");
 
 db.run("PRAGMA foreign_keys = ON");
 
-<<<<<<< Updated upstream
-=======
 function ensureColumnExists(tableName, columnName, columnType, done) {
   db.all(`PRAGMA table_info(${tableName})`, (err, columns) => {
     if (err) {
@@ -28,7 +26,6 @@ function ensureColumns(checks, finalCallback) {
   run(0);
 }
 
->>>>>>> Stashed changes
 db.serialize(() => {
 
   db.run(`CREATE TABLE IF NOT EXISTS cliente (
@@ -40,8 +37,6 @@ db.serialize(() => {
     role VARCHAR(20) DEFAULT 'cliente'
   )`);
 
-<<<<<<< Updated upstream
-=======
   db.run(`CREATE TABLE IF NOT EXISTS cupom (
     id_cupom INTEGER PRIMARY KEY AUTOINCREMENT,
     codigo VARCHAR(50) UNIQUE,
@@ -53,7 +48,6 @@ db.serialize(() => {
   db.run(`INSERT OR IGNORE INTO cupom (codigo, desconto_tipo, desconto_valor) VALUES ('VELVET10', 'flat', 10.00)`);
   db.run(`INSERT OR IGNORE INTO cupom (codigo, desconto_tipo, desconto_valor) VALUES ('DESCONTO20', 'flat', 20.00)`);
   db.run(`INSERT OR IGNORE INTO cupom (codigo, desconto_tipo, desconto_valor) VALUES ('PRIMEIRA', 'flat', 15.00)`);
->>>>>>> Stashed changes
 
   db.run(`CREATE TABLE IF NOT EXISTS endereco (
     id_endereco INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -106,10 +100,6 @@ db.serialize(() => {
     FOREIGN KEY(fk_Bolo_id_bolo) REFERENCES bolo(id_bolo)
   )`);
 
-<<<<<<< Updated upstream
-  const { syncProducts } = require('./syncData');
-  syncProducts(db);
-=======
   db.run(`CREATE TABLE IF NOT EXISTS avaliacao (
     id_avaliacao INTEGER PRIMARY KEY AUTOINCREMENT,
     nota INTEGER NOT NULL CHECK(nota BETWEEN 1 AND 5),
@@ -125,15 +115,19 @@ db.serialize(() => {
   ensureColumns([
     { table: "cliente", column: "avatar_url", type: "TEXT" },
     { table: "cliente", column: "role", type: "VARCHAR(20) DEFAULT 'cliente'" },
+    { table: "cliente", column: "ultima_alteracao_senha", type: "TEXT" },
     { table: "endereco", column: "bairro", type: "VARCHAR(100)" },
     { table: "endereco", column: "cidade", type: "VARCHAR(100)" },
     { table: "pedido", column: "fk_Endereco_id_endereco", type: "INTEGER" },
+    { table: "pedido", column: "cupom_codigo", type: "VARCHAR(50)" },
+    { table: "pedido", column: "desconto_valor", type: "DECIMAL(10,2) DEFAULT 0" },
+    { table: "bolo", column: "ativo", type: "INTEGER DEFAULT 1" },
+    { table: "bolo", column: "categoria", type: "VARCHAR(50)" },
   ], () => {
     const { syncProducts } = require('./syncData');
     syncProducts(db);
   });
 
->>>>>>> Stashed changes
 });
 
 module.exports = db;
