@@ -9,7 +9,10 @@ router.post("/sync", boloController.syncProducts);
 router.put("/:id", boloController.updateBolo);
 router.delete("/:id", boloController.deleteBolo);
 
+router.get("/avaliacoes/cliente/:clientId", avaliacaoController.getByCliente);
 router.get("/:id/avaliacoes", avaliacaoController.getAvaliacoes);
 router.post("/:id/avaliacoes", avaliacaoController.createAvaliacao);
+router.put("/avaliacoes/:id", avaliacaoController.updateAvaliacao);
+router.delete("/avaliacoes/:id", avaliacaoController.deleteAvaliacao);
 
 module.exports = router;
