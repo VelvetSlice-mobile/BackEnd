@@ -1,6 +1,5 @@
 const db = require("../config/db");
 
-
 exports.createAddress = (req, res) => {
   const {
     nome_endereco,
@@ -11,48 +10,39 @@ exports.createAddress = (req, res) => {
     complemento,
     bairro,
     cidade,
-    fk_Cliente_id_cliente
+    fk_Cliente_id_cliente,
   } = req.body;
 
   const sql = `INSERT INTO endereco (nome_endereco, logradouro, numero, CEP, estado, complemento, bairro, cidade)
                VALUES (?, ?, ?, ?, ?, ?, ?, ?)`;
 
-  db.run(
-    sql,
-    [nome_endereco, logradouro, numero, CEP, estado, complemento, bairro, cidade],
-    function (err) {
-      if (err) return res.status(500).json({ error: err.message });
+  db.run(sql, [nome_endereco, logradouro, numero, CEP, estado, complemento, bairro, cidade], function (err) {
+    if (err) return res.status(500).json({ error: err.message });
 
-      const newAddressId = this.lastID;
-      const responsePayload = { id_endereco: newAddressId, ...req.body };
+    const newAddressId = this.lastID;
+    const responsePayload = { id_endereco: newAddressId, ...req.body };
 
-      if (fk_Cliente_id_cliente) {
-        const linkSql = `INSERT OR IGNORE INTO endereco_entrega (fk_Cliente_id_cliente, fk_Endereco_id_endereco) VALUES (?, ?)`;
-        db.run(linkSql, [fk_Cliente_id_cliente, newAddressId], function (linkErr) {
-          if (linkErr) return res.status(500).json({ error: linkErr.message });
-          return res.status(201).json(responsePayload);
-        });
-      } else {
+    if (fk_Cliente_id_cliente) {
+      const linkSql = `INSERT OR IGNORE INTO endereco_entrega (fk_Cliente_id_cliente, fk_Endereco_id_endereco) VALUES (?, ?)`;
+      db.run(linkSql, [fk_Cliente_id_cliente, newAddressId], function (linkErr) {
+        if (linkErr) return res.status(500).json({ error: linkErr.message });
         return res.status(201).json(responsePayload);
-      }
+      });
+    } else {
+      return res.status(201).json(responsePayload);
     }
-  );
+  });
 };
-
 
 exports.linkAddressToClient = (req, res) => {
   const { fk_Cliente_id_cliente, fk_Endereco_id_endereco } = req.body;
-
   const sql = `INSERT OR IGNORE INTO endereco_entrega (fk_Cliente_id_cliente, fk_Endereco_id_endereco) VALUES (?, ?)`;
 
   db.run(sql, [fk_Cliente_id_cliente, fk_Endereco_id_endereco], function (err) {
     if (err) return res.status(500).json({ error: err.message });
-    res.
-    status(201).
-    json({ message: "Endereço vinculado ao cliente com sucesso!" });
+    res.status(201).json({ message: "Endereço vinculado ao cliente com sucesso!" });
   });
 };
-
 
 exports.getAddressesByClient = (req, res) => {
   const sql = `
@@ -66,24 +56,17 @@ exports.getAddressesByClient = (req, res) => {
   });
 };
 
-
 exports.updateAddress = (req, res) => {
   const { nome_endereco, logradouro, numero, CEP, estado, complemento, bairro, cidade } = req.body;
   const sql = `UPDATE endereco
                SET nome_endereco = ?, logradouro = ?, numero = ?, CEP = ?, estado = ?, complemento = ?, bairro = ?, cidade = ?
                WHERE id_endereco = ?`;
 
-  db.run(
-    sql,
-    [nome_endereco, logradouro, numero, CEP, estado, complemento, bairro, cidade, req.params.id],
-
-    function (err) {
-      if (err) return res.status(500).json({ error: err.message });
-      res.json({ updated: this.changes });
-    }
-  );
+  db.run(sql, [nome_endereco, logradouro, numero, CEP, estado, complemento, bairro, cidade, req.params.id], function (err) {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json({ updated: this.changes });
+  });
 };
-
 
 exports.deleteAddress = (req, res) => {
   const { id } = req.params;
@@ -98,7 +81,6 @@ exports.deleteAddress = (req, res) => {
   db.run(deleteLink, [clientId, id], function (err) {
     if (err) return res.status(500).json({ error: err.message });
 
-
     const cleanup = `
       DELETE FROM endereco
       WHERE id_endereco NOT IN (
@@ -107,7 +89,9 @@ exports.deleteAddress = (req, res) => {
       AND EXISTS (SELECT 1 FROM endereco_entrega)
     `;
 
-    db.run(cleanup);
+    db.run(cleanup, (cleanErr) => {
+      if (cleanErr) console.error("Erro ao limpar endereços órfãos:", cleanErr.message);
+    });
 
     res.json({ deleted: this.changes });
   });
