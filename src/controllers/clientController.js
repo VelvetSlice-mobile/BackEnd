@@ -1,5 +1,5 @@
-const fs = require("fs");
-const path = require("path");
+const fs = require("node:fs");
+const path = require("node:path");
 const db = require("../config/db");
 const { signClientToken } = require("../config/auth");
 
@@ -18,33 +18,24 @@ function buildPublicAvatarUrl(req, avatarPath) {
   return `${req.protocol}://${req.get("host")}${normalizedPath}`;
 }
 
-function buildClientPayload(req, row) {
-  return {
+function buildLegacyClientPayload(req, row, includeToken = false) {
+  const payload = {
     id_cliente: row.id_cliente,
     id: row.id_cliente,
     nome: row.nome,
     email: row.email,
     telefone: row.telefone,
     avatar_url: buildPublicAvatarUrl(req, row.avatar_url),
-  };
-}
-
-function buildLegacyClientPayload(req, row, includeToken = false) {
-  const payload = buildClientPayload(req, row);
-  const legacy = {
-    id_cliente: payload.id_cliente,
-    nome: payload.nome,
-    email: payload.email,
-    telefone: payload.telefone,
-    avatar_url: payload.avatar_url,
+    role: row.role || 'cliente',
+    ultima_alteracao_senha: row.ultima_alteracao_senha || null,
   };
 
   if (includeToken) {
-    legacy.access_token = signClientToken({ sub: String(row.id_cliente) });
-    legacy.token_type = "Bearer";
+    payload.access_token = signClientToken({ sub: String(row.id_cliente), role: row.role || 'cliente' });
+    payload.token_type = "Bearer";
   }
 
-  return legacy;
+  return payload;
 }
 
 function getAvatarDiskPath(storedAvatarUrl) {
@@ -57,7 +48,7 @@ function getAvatarDiskPath(storedAvatarUrl) {
   if (/^https?:\/\//i.test(storedAvatarUrl)) {
     try {
       pathname = new URL(storedAvatarUrl).pathname;
-    } catch (error) {
+    } catch {
       return null;
     }
   }
@@ -81,6 +72,37 @@ function removeFileIfExists(filePath) {
   });
 }
 
+exports.resetPassword = (req, res) => {
+  const { email, novaSenha } = req.body;
+
+  if (!email || !novaSenha) {
+    return res.status(400).json({ error: "Informe o e-mail e a nova senha." });
+  }
+
+  if (novaSenha.length < 6) {
+    return res.status(400).json({ error: "A nova senha deve ter no mínimo 6 caracteres." });
+  }
+
+  if (novaSenha.length > 100) {
+    return res.status(400).json({ error: "A nova senha deve ter no máximo 100 caracteres." });
+  }
+
+  db.get("SELECT id_cliente FROM cliente WHERE email = ?", [email.trim().toLowerCase()], (err, row) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (!row) return res.status(404).json({ error: "Não encontramos uma conta com esse e-mail." });
+
+    const agora = new Date().toISOString();
+    db.run(
+      "UPDATE cliente SET senha = ?, ultima_alteracao_senha = ? WHERE id_cliente = ?",
+      [novaSenha, agora, row.id_cliente],
+      function (err2) {
+        if (err2) return res.status(500).json({ error: err2.message });
+        res.json({ updated: this.changes });
+      }
+    );
+  });
+};
+
 exports.registerClient = (req, res) => {
   const { nome, email, senha, telefone } = req.body;
   const sql = `INSERT INTO cliente (nome, email, senha, telefone) VALUES (?, ?, ?, ?)`;
@@ -90,37 +112,39 @@ exports.registerClient = (req, res) => {
       return res.status(400).json({ error: "Email já cadastrado ou erro no banco." });
     }
 
-    const row = {
-      id_cliente: this.lastID,
-      nome,
-      email,
-      telefone,
-      avatar_url: null,
-    };
-
-    res.status(201).json({
-      ...buildLegacyClientPayload(req, row, true),
-    });
+    const newId = this.lastID;
+    const { signClientToken } = require("../config/auth");
+    const access_token = signClientToken({ sub: String(newId), role: "cliente" });
+    res.status(201).json({ id_cliente: newId, nome, email, telefone: telefone ?? null, role: "cliente", access_token, token_type: "Bearer" });
   });
 };
 
 exports.loginClient = (req, res) => {
   const { email, senha } = req.body;
-  const sql = `SELECT id_cliente, nome, email, telefone, avatar_url FROM cliente WHERE email = ? AND senha = ?`;
 
-  db.get(sql, [email, senha], (err, row) => {
-    if (err) return res.status(500).json({ error: err.message });
-    if (!row) return res.status(401).json({ error: "Credenciais inválidas." });
+  db.get(
+    `SELECT id_cliente, nome, email, telefone, avatar_url, role, senha as senha_stored FROM cliente WHERE email = ?`,
+    [email],
+    (err, row) => {
+      if (err) return res.status(500).json({ error: err.message });
 
-    res.json({
-      ...buildLegacyClientPayload(req, row, true),
-    });
-  });
+      if (!row) {
+        return res.status(401).json({ error: "Não encontramos uma conta com esse e-mail. Verifique ou cadastre-se." });
+      }
+
+      if (row.senha_stored !== senha) {
+        return res.status(401).json({ error: "Senha incorreta. Tente novamente." });
+      }
+
+      const { senha_stored, ...clientRow } = row;
+      res.json({ ...buildLegacyClientPayload(req, clientRow, true) });
+    }
+  );
 };
 
 exports.getAllClients = (req, res) => {
   db.all(
-    "SELECT id_cliente, nome, email, telefone, avatar_url FROM cliente",
+    "SELECT id_cliente, nome, email, telefone, avatar_url, role FROM cliente",
     [],
     (err, rows) => {
       if (err) return res.status(500).json({ error: err.message });
@@ -131,7 +155,7 @@ exports.getAllClients = (req, res) => {
 
 exports.getClientById = (req, res) => {
   db.get(
-    "SELECT id_cliente, nome, email, telefone, avatar_url FROM cliente WHERE id_cliente = ?",
+    "SELECT id_cliente, nome, email, telefone, avatar_url, role FROM cliente WHERE id_cliente = ?",
     [req.params.id],
     (err, row) => {
       if (err) return res.status(500).json({ error: err.message });
@@ -153,6 +177,63 @@ exports.updateClient = (req, res) => {
   });
 };
 
+exports.updatePassword = (req, res) => {
+  const { senhaAtual, novaSenha } = req.body;
+  const { id } = req.params;
+
+  if (!senhaAtual || !novaSenha) {
+    return res.status(400).json({ error: "Informe a senha atual e a nova senha." });
+  }
+
+  if (novaSenha.length < 6) {
+    return res.status(400).json({ error: "A nova senha deve ter no mínimo 6 caracteres." });
+  }
+
+  if (novaSenha.length > 100) {
+    return res.status(400).json({ error: "A nova senha deve ter no máximo 100 caracteres." });
+  }
+
+  if (novaSenha === senhaAtual) {
+    return res.status(400).json({ error: "A nova senha não pode ser igual à senha atual." });
+  }
+
+  db.get("SELECT senha, ultima_alteracao_senha FROM cliente WHERE id_cliente = ?", [id], (err, row) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (!row) return res.status(404).json({ error: "Usuário não encontrado." });
+
+    if (row.senha !== senhaAtual) {
+      let diasDesdeAlteracao = null;
+      if (row.ultima_alteracao_senha) {
+        diasDesdeAlteracao = Math.floor(
+          (Date.now() - new Date(row.ultima_alteracao_senha).getTime()) / 86400000
+        );
+      }
+
+      let detalhe = "";
+      if (diasDesdeAlteracao === 0) {
+        detalhe = " Sua senha foi alterada há menos de 1 dia.";
+      } else if (diasDesdeAlteracao > 0) {
+        detalhe = " Sua senha foi alterada há " + diasDesdeAlteracao + " dia(s).";
+      }
+
+      return res.status(400).json({
+        error: "Senha atual incorreta." + detalhe,
+        dias_desde_alteracao: diasDesdeAlteracao,
+      });
+    }
+
+    const agora = new Date().toISOString();
+    db.run(
+      "UPDATE cliente SET senha = ?, ultima_alteracao_senha = ? WHERE id_cliente = ?",
+      [novaSenha, agora, id],
+      function (err2) {
+        if (err2) return res.status(500).json({ error: err2.message });
+        res.json({ updated: this.changes, ultima_alteracao_senha: agora });
+      }
+    );
+  });
+};
+
 exports.updateAvatar = (req, res) => {
   const clientId = String(req.params.id);
   const authenticatedClientId = String(req.clientAuth?.id || "");
@@ -170,7 +251,7 @@ exports.updateAvatar = (req, res) => {
   }
 
   db.get(
-    "SELECT id_cliente, nome, email, telefone, avatar_url FROM cliente WHERE id_cliente = ?",
+    "SELECT id_cliente, nome, email, telefone, avatar_url, role FROM cliente WHERE id_cliente = ?",
     [clientId],
     (err, currentClient) => {
       if (err) {
@@ -222,30 +303,17 @@ exports.updateAvatar = (req, res) => {
 exports.deleteClient = (req, res) => {
   const id = req.params.id;
 
-  db.get(
-    "SELECT avatar_url FROM cliente WHERE id_cliente = ?",
-    [id],
-    (lookupErr, clientRow) => {
-      if (lookupErr) {
-        return res.status(500).json({ error: lookupErr.message });
-      }
-
-      db.run("DELETE FROM cliente WHERE id_cliente = ?", id, function (err) {
-        if (err) {
-          return res.status(500).json({
-            error:
-              "Não foi possível deletar a conta. Verifique se existem pedidos vinculados a este usuário.",
-          });
-        }
-
-        if (this.changes === 0) {
-          return res.status(404).json({ message: "Cliente não encontrado." });
-        }
-
-        removeFileIfExists(getAvatarDiskPath(clientRow?.avatar_url));
-
-        res.json({ message: "Conta removida com sucesso!", deleted: this.changes });
+  db.run("DELETE FROM cliente WHERE id_cliente = ?", [id], function (err) {
+    if (err) {
+      return res.status(500).json({
+        error: "Não foi possível deletar a conta. Verifique se existem pedidos vinculados a este usuário."
       });
-    },
-  );
+    }
+
+    if (this.changes === 0) {
+      return res.status(404).json({ message: "Cliente não encontrado." });
+    }
+
+    res.json({ message: "Conta removida com sucesso!", deleted: this.changes });
+  });
 };
