@@ -1,12 +1,33 @@
 node_modules/
+
+# Ambiente
 .env
 .env.*
 !.env.example
+
+# Banco de dados
 *.db
 *.db-journal
+
+# Uploads (mantém estrutura de pastas)
 uploads/avatars/*
 !uploads/avatars/.gitkeep
 uploads/products/*
 !uploads/products/.gitkeep
+
+# Logs
+*.log
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+
+# Sistema operacional
+.DS_Store
+Thumbs.db
+
+# IDEs
 .idea/
+.vscode/
+
+# Credenciais locais
 ../credenciais.txt
