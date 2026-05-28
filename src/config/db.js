@@ -123,10 +123,7 @@ db.serialize(() => {
     { table: "pedido", column: "desconto_valor", type: "DECIMAL(10,2) DEFAULT 0" },
     { table: "bolo", column: "ativo", type: "INTEGER DEFAULT 1" },
     { table: "bolo", column: "categoria", type: "VARCHAR(50)" },
-  ], () => {
-    const { syncProducts } = require('./syncData');
-    syncProducts(db);
-  });
+  ]);
 
 });
 
