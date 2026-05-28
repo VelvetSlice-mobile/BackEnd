@@ -5,9 +5,10 @@ node_modules/
 .env.*
 !.env.example
 
-# Banco de dados
-*.db
+# Banco de dados (apenas temporários — o .db principal é versionado)
 *.db-journal
+*.db-shm
+*.db-wal
 
 # Uploads (mantém estrutura de pastas)
 uploads/avatars/*
