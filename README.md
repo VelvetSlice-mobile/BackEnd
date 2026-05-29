@@ -101,6 +101,10 @@ BackEnd/
 │   │   ├── cupomRoutes.js         # /api/cupons
 │   │   └── paymentRoutes.js       # /api/payments
 │   └── server.js
+├── Dashboard/
+│   ├── dashboard.py               # Script Python — gera dashboard de vendas via API
+│   ├── dashboard_velvetslice.png  # Última exportação (PNG)
+│   └── dashboard_velvetslice.pdf  # Última exportação (PDF)
 ├── uploads/
 │   ├── avatars/     # Fotos de perfil
 │   └── products/    # Imagens dos produtos
@@ -294,6 +298,69 @@ npm run dev
 ```powershell
 Remove-Item velvetslice_server.db
 npm run dev
+```
+
+---
+
+## Dashboard Python (Análise de Dados — Fase 4)
+
+O script `Dashboard/dashboard.py` gera um painel visual de vendas e performance em PNG e PDF, consumindo exclusivamente dados da API REST via JSON.
+
+### Como funciona
+
+O script **não acessa o banco de dados diretamente**. Ele autentica na API com credenciais de admin e consome os seguintes endpoints:
+
+| Endpoint | Dados obtidos |
+|----------|---------------|
+| `POST /api/clients/login` | Autenticação — obtém token JWT |
+| `GET /api/dashboard/stats` | Total de pedidos, faturamento e produtos |
+| `GET /api/dashboard/mais-vendidos` | Ranking de produtos por unidades vendidas |
+| `GET /api/dashboard/pedidos` | Lista completa de pedidos com status e pagamento |
+| `GET /api/bolos` | Catálogo de produtos com categoria (público) |
+
+Os dados JSON são processados com `pandas` e transformados em gráficos com `matplotlib`:
+
+- **4 KPIs:** Total de Pedidos, Faturamento Total, Ticket Médio, Produtos Ativos
+- **Gráfico de pizza:** Status dos pedidos
+- **Gráfico de barras horizontal:** Produtos mais vendidos (unidades)
+- **Gráfico de pizza:** Métodos de pagamento
+- **Gráfico de barras:** Receita por produto
+- **Gráfico de barras:** Receita por categoria
+
+### Pré-requisitos
+
+```bash
+pip install requests pandas matplotlib
+```
+
+### Como rodar
+
+**1. Suba o BackEnd primeiro:**
+
+```bash
+npm run dev
+```
+
+**2. Em outro terminal, gere o dashboard:**
+
+```bash
+cd Dashboard
+python dashboard.py         # Gera apenas PNG
+python dashboard.py --pdf   # Gera PNG + PDF
+```
+
+Os arquivos são salvos em `Dashboard/dashboard_velvetslice.png` e `.pdf`.
+
+### Configuração de credenciais
+
+Por padrão o script usa `admin@velvet.com` / `admin123`. Para usar outras credenciais sem alterar o código:
+
+```bash
+# Windows PowerShell
+$env:ADM_EMAIL="outro@email.com"; $env:ADM_SENHA="outrasenha"; python dashboard.py
+
+# Linux/macOS
+ADM_EMAIL="outro@email.com" ADM_SENHA="outrasenha" python dashboard.py
 ```
 
 ---
