@@ -292,6 +292,7 @@ exports.updateAvatar = (req, res) => {
               email: updatedClient.email,
               telefone: updatedClient.telefone,
               avatar_url: buildPublicAvatarUrl(req, updatedClient.avatar_url),
+              role: updatedClient.role || 'cliente',
             },
           });
         },

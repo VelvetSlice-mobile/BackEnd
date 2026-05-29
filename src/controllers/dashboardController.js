@@ -121,26 +121,26 @@ exports.getAllBolos = (req, res) => {
 };
 
 exports.createBolo = (req, res) => {
-  const { nome, descricao, preco, imagem } = req.body;
+  const { nome, descricao, preco, imagem, categoria, peso } = req.body;
   if (!nome || !preco) return res.status(400).json({ error: 'Nome e preço são obrigatórios.' });
 
   db.run(
-    'INSERT INTO bolo (nome, descricao, preco, imagem) VALUES (?, ?, ?, ?)',
-    [nome, descricao || '', Number(preco), imagem || ''],
+    'INSERT INTO bolo (nome, descricao, preco, imagem, categoria, peso) VALUES (?, ?, ?, ?, ?, ?)',
+    [nome, descricao || '', Number(preco), imagem || '', categoria || null, peso || null],
     function (err) {
       if (err) return res.status(500).json({ error: err.message });
-      res.status(201).json({ id_bolo: this.lastID, nome, descricao, preco, imagem });
+      res.status(201).json({ id_bolo: this.lastID, nome, descricao, preco, imagem, categoria, peso });
     }
   );
 };
 
 exports.updateBolo = (req, res) => {
   const { id } = req.params;
-  const { nome, descricao, preco, imagem } = req.body;
+  const { nome, descricao, preco, imagem, categoria, peso } = req.body;
 
   db.run(
-    'UPDATE bolo SET nome = ?, descricao = ?, preco = ?, imagem = ? WHERE id_bolo = ?',
-    [nome, descricao, Number(preco), imagem, id],
+    'UPDATE bolo SET nome = ?, descricao = ?, preco = ?, imagem = ?, categoria = ?, peso = ? WHERE id_bolo = ?',
+    [nome, descricao, Number(preco), imagem, categoria || null, peso || null, id],
     function (err) {
       if (err) return res.status(500).json({ error: err.message });
       res.json({ updated: this.changes });

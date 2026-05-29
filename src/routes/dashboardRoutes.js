@@ -6,13 +6,13 @@ const requireAdminAuth = require('../middleware/requireAdminAuth');
 const { uploadProductImage } = require('../config/productImageUpload');
 
 function handleProductImageUpload(req, res, next) {
-  uploadProductImage.single("file")(req, res, (err) => {
-    if (!err) return next();
-    if (err instanceof multer.MulterError && err.code === "LIMIT_FILE_SIZE") {
-      return res.status(400).json({ error: "Imagem muito grande. Limite de 5MB." });
-    }
-    return res.status(400).json({ error: err.message || "Falha no upload da imagem." });
-  });
+    uploadProductImage.single("file")(req, res, (err) => {
+        if (!err) return next();
+        if (err instanceof multer.MulterError && err.code === "LIMIT_FILE_SIZE") {
+            return res.status(400).json({ error: "Imagem muito grande. Limite de 5MB." });
+        }
+        return res.status(400).json({ error: err.message || "Falha no upload da imagem." });
+    });
 }
 
 router.post('/register-admin', dc.registerAdmin);

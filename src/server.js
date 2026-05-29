@@ -33,8 +33,8 @@ app.get("/", (req, res) => {
   res.send("Servidor Velvet Slice Online!");
 });
 
-process.on('uncaughtException', () => process.exit(1));
-process.on('unhandledRejection', () => process.exit(1));
+process.on('uncaughtException', (err) => console.error('[uncaughtException]', err.message));
+process.on('unhandledRejection', (err) => console.error('[unhandledRejection]', err?.message ?? err));
 
 const PORT = process.env.PORT || 3000;
 
